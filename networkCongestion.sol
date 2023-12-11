@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+
 contract networkCongestionContract {
 
     // Estrutura para armazenar título, pergunta, quantidade de tokens e status
@@ -38,18 +51,56 @@ contract networkCongestionContract {
         emit QuestionSatified(msg.sender, _indice, tokensToAnswer);
     }
 
-    /* To do
-    function name() public view returns (string)
-    function symbol() public view returns (string)
-    function decimals() public view returns (uint8)
-    function totalSupply() public view returns (uint256)
-    function balanceOf(address _owner) public view returns (uint256 balance)
-    function transfer(address _to, uint256 _value) public returns (bool success)
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)
-    function approve(address _spender, uint256 _value) public returns (bool success)
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining)
+}
 
-    event Transfer(address indexed _from, address indexed _to, uint256 _value)
-    event Approval(address indexed _owner, address indexed _spender, uint256 _value)
-    */
+contract NetworkCongestionToken is IERC20 {
+    string public name = "ChannelLoad";
+    string public symbol = "CHNL";
+    uint8 public decimals = 18; // Decimais do token
+    uint256 public override totalSupply;
+
+    mapping(address => uint256) public balances;
+    mapping(address => mapping(address => uint256)) public allowed;
+
+    constructor(uint256 initialSupply) {
+        totalSupply = initialSupply * (10 ** uint256(decimals));
+        balances[msg.sender] = totalSupply;
+        emit Transfer(address(0), msg.sender, totalSupply);
+    }
+
+    function balanceOf(address account) public view override returns (uint256) {
+        return balances[account];
+    }
+
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        require(recipient != address(0), "Transfer to the zero address");
+        require(amount <= balances[msg.sender], "Insufficient balance");
+
+        balances[msg.sender] -= amount;
+        balances[recipient] += amount;
+        emit Transfer(msg.sender, recipient, amount);
+        return true;
+    }
+
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return allowed[owner][spender];
+    }
+
+    function approve(address spender, uint256 amount) public override returns (bool) {
+        allowed[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        require(recipient != address(0), "Transfer to the zero address");
+        require(amount <= balances[sender], "Insufficient balance");
+        require(amount <= allowed[sender][msg.sender], "Insufficient allowance");
+
+        balances[sender] -= amount;
+        balances[recipient] += amount;
+        allowed[sender][msg.sender] -= amount;
+        emit Transfer(sender, recipient, amount);
+        return true;
+    }
 }
