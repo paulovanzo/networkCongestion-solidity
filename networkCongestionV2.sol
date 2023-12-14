@@ -102,6 +102,11 @@ contract PerguntasERespostas {
         expirarPergunta(_perguntaId);
     }
 
+    // Função para retornar todas as perguntas
+    function retornarTodasPerguntas() public view returns(Pergunta[] memory){
+        return perguntas;
+    }
+
     // Função para votar em uma resposta
     function upvoteResposta(uint256 _perguntaId, uint256 _respostaId) public {
         require(_respostaId < respostas[_perguntaId].length, "Resposta nao encontrada");
